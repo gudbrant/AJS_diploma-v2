@@ -15,8 +15,7 @@
     "preshow:doc": "npm run doc",
     "show:doc": "live-server doc",
     "preshow:dist": "npm run build",
-    "show:dist": "live-server dist",
-    "Installed": "npm install -D @babel/cli @babel/core @babel/preset-env babel-jest babel-loader css-loader eslint eslint-config-airbnb-base eslint-plugin-import html-loader html-webpack-plugin jest live-server mini-css-extract-plugin webpack webpack-cli webpack-dev-server"
+    "show:dist": "live-server dist"
   },
   "repository": {
     "type": "git",
@@ -49,5 +48,8 @@
     "webpack": "^5.17.0",
     "webpack-cli": "^4.4.0",
     "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "core-js": "^3.8.3"
   }
 }
