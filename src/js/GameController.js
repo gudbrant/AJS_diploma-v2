@@ -1,4 +1,5 @@
 import { generateTeam } from './generators';
+import randomInt from './randomInt';
 import Board from './Board';
 import GamePlay from './GamePlay';
 import Bowman from './Characters/Bowman';
@@ -21,6 +22,10 @@ export default class GameController {
     this.enemyChars = [];
     this.allChars = [];
     this.currentChar = null;
+    this.currentEnemy = null;
+    this.canMove = false;
+    this.canAttack = false;
+    this.isPlayerTurn = true;
   }
 
   startNewGame() {
@@ -30,20 +35,28 @@ export default class GameController {
     return this.allChars;
   }
 
+  /**
+   * add event listeners to gamePlay events
+   * load saved state from stateService
+   */
   init() {
     this.gamePlay.drawUi('prairie');
     this.addListeners();
     this.gamePlay.redrawPositions(this.startNewGame());
-    // TODO: add event listeners to gamePlay events
-    // TODO: load saved stated from stateService
   }
 
   addListeners() {
     this.gamePlay.addCellEnterListener(this.onCellEnter);
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
     this.gamePlay.addCellClickListener(this.onCellClick);
+    // this.gamePlay.addNewGameListener(this.init());
   }
 
+  /**
+   * Проверка принадлежности персонажа.
+   * @param {*} charInCell 
+   * @param {Array} allowedClasses 
+   */
   static checkChar(charInCell, allowedClasses = []) {
     for (let item of allowedClasses) {
       if (charInCell.classList.contains(item)) {
@@ -52,36 +65,132 @@ export default class GameController {
     }
   }
 
-
+  /**
+   * Определить текущего персонажа.
+   * @param {Number} index 
+   */
   defineCurrentChar(index) {
     this.currentChar = this.playerChars.filter((char) => char.position === index)[0];
-    this.currentChar.areaMove = this.board.calculateAreaMove(this.currentChar.character.distanceMove, this.currentChar.position);
-    this.currentChar.areaAttack = this.board.calculateArea(this.currentChar.character.distanceAttack, this.currentChar.position);
-    console.log(this.currentChar)
+    this.calculateActionArea(this.currentChar);
+  }
+
+  defineCurrentEnemy(index) {
+    this.currentEnemy = this.enemyChars.filter((char) => char.position === index)[0];
+    this.calculateActionArea(this.currentEnemy);
+  }
+
+  calculateActionArea(char) {
+    char.areaMove = this.board.calculateAreaMove(char.character.distanceMove, char.position);
+    char.areaAttack = this.board.calculateArea(char.character.distanceAttack, char.position);
+  }
+
+  /**
+   * Выбрать персонажа и выделить поле желтым.
+   * @param {Number} index 
+   */
+  selectChar(index) {
+    this.gamePlay.selectCell(index);
+    this.defineCurrentChar(index);
+  }
+
+  /**
+   * Возможность двигаться или атаковать.
+   * @param {Boolean} move 
+   * @param {Boolean} attack 
+   */
+  setAction(move, attack) {
+    this.canMove = move;
+    this.canAttack = attack;
+  }
+
+
+  movePlayerChar(char, index) {
+    this.gamePlay.deselectCell(char.position);
+    char.position = index;
+    this.gamePlay.redrawPositions(this.allChars);
+    this.selectChar(index);
+    this.isPlayerTurn = false;
+    this.enemyTurn();
+  }
+
+  moveEnemyChar(char) {
+    const rand = randomInt(0, this.currentEnemy.areaMove.length - 1);
+    const index = this.currentEnemy.areaMove[rand];
+    char.position = index;
+    this.gamePlay.redrawPositions(this.allChars);
+  }
+
+  enemyTurn() {
+    const enemyAction = () => {
+      const rand = randomInt(0, this.enemyChars.length - 1);
+      this.defineCurrentEnemy(this.enemyChars[rand].position);
+
+      const detect = () => {
+        let detected = null;
+        this.currentEnemy.areaAttack.forEach(index => {
+          const charInRange = this.playerChars.filter((char) => char.position === index);
+          if (charInRange.length > 0) {
+            detected = charInRange;
+          } 
+        });
+        return detected;
+      }
+
+      let detectedPlayerChar = detect();
+
+      if (detectedPlayerChar) {
+        this.attack(this.currentEnemy, detectedPlayerChar[0]);
+      } else {
+        this.moveEnemyChar(this.currentEnemy);
+      }
+
+      this.isPlayerTurn = true;
+    }
+    setTimeout(enemyAction, 1000);
+  }
+
+  attack(attacking, defending) {
+    defending.character.health -= attacking.character.attack;
+    console.log(attacking);
+    console.log(defending);
+    if (defending.character.health <= 0) {
+      this.removeChar(defending);
+    }
+  }
+
+  removeChar(char) {
+    
   }
 
   onCellClick(index) {
     const charInCell = event.target;
+    // проверить, принадлежит ли персонаж игроку
     const isCharInCell = charInCell && GameController.checkChar(charInCell, ['Bowman', 'Swordsman', 'Magician']);
-    const isWrongChar = GameController.checkChar(charInCell, ['Undead', 'Zombie', 'Daemon']);
+    const isEnemyChar = GameController.checkChar(charInCell, ['Undead', 'Zombie', 'Daemon']);
 
-    if (isWrongChar) {
-      GamePlay.showError('This is an enemy character!');
-    }
-
-    if (this.gamePlay.boardEl.querySelector('.selected-yellow')) {
-      const previousCell = this.gamePlay.boardEl.querySelector('.selected-yellow');
-      const previousCellIndex = this.gamePlay.cells.indexOf(previousCell);
-      this.gamePlay.deselectCell(previousCellIndex);
-      if (isCharInCell) {
-        this.gamePlay.selectCell(index);
-        this.defineCurrentChar(index);
+    if (isEnemyChar) {
+      if (this.canAttack) {
+        const defending = this.enemyChars.filter((char) => char.position === index)[0];
+        this.attack(this.currentChar, defending)
+        this.enemyTurn();
+      } else {
+        GamePlay.showError('This is an enemy character!');
       }
-    } else if (isCharInCell) {
-      this.gamePlay.selectCell(index);
-      this.defineCurrentChar(index);
+      
     }
 
+    if (isCharInCell) {
+      if (this.currentChar) {
+        this.gamePlay.deselectCell(this.currentChar.position);
+      }
+      this.selectChar(index);
+    }
+
+    if (this.currentChar) {
+      if (this.canMove) {
+        this.movePlayerChar(this.currentChar, index);
+      }
+    }
 
   }
 
@@ -95,17 +204,21 @@ export default class GameController {
       // указатель для выбора своего персонажа
       if (GameController.checkChar(charInCell, ['Bowman', 'Swordsman', 'Magician'])) {
         this.gamePlay.setCursor('pointer');
+        this.setAction(false, false);
       //указатель для атаки
       } else if (this.currentChar !== null && this.currentChar.areaAttack.indexOf(index) !== -1) {
         this.gamePlay.setCursor('crosshair');
         this.gamePlay.selectCell(index, 'red');
+        this.setAction(false, true);
       }
       //указатель для движения
     } else if (this.currentChar !== null && this.currentChar.areaMove.indexOf(index) !== -1) {
       this.gamePlay.setCursor('pointer');
       this.gamePlay.selectCell(index, 'green');
+      this.setAction(true, false);
     } else {
-      this.gamePlay.setCursor('notallowed');
+      this.gamePlay.setCursor('not-allowed');
+      this.setAction(false, false);
     }
     
 
@@ -114,6 +227,8 @@ export default class GameController {
   onCellLeave(index) {
     this.gamePlay.hideCellTooltip(index);
     this.gamePlay.setCursor('auto');
-    this.gamePlay.deselectCell(index);
+    if (this.gamePlay.cells[index].classList.contains('selected-green') || this.gamePlay.cells[index].classList.contains('selected-red')) {
+      this.gamePlay.deselectCell(index);
+    }
   }
 }
