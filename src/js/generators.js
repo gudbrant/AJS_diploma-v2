@@ -16,7 +16,7 @@ export function characterGenerator(allowedTypes, maxLevel) {
   const newChar = new allowedTypes[rand](1);
   
   if (level > 1) {
-    for (i = 0; i < level - 1; i++) {
+    for (let i = 0; i < level - 1; i++) {
       newChar.levelUp();
     }
   }
