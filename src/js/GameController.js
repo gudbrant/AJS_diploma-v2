@@ -40,13 +40,17 @@ export default class GameController {
     this.gamePlay.drawUi(themes.prairie);
     this.addListeners();
     this.gamePlay.redrawPositions(this.startNewGame());
+    this.currentChar = null;
+    this.currentEnemy = null;
+    this.isPlayerTurn = true;
+    this.currentLevel = 1;
   }
 
   addListeners() {
     this.gamePlay.addCellEnterListener(this.onCellEnter);
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
     this.gamePlay.addCellClickListener(this.onCellClick);
-    // this.gamePlay.addNewGameListener(this.init());
+    this.gamePlay.addNewGameListener(() => this.init());
   }
 
   /**
@@ -167,12 +171,13 @@ export default class GameController {
 
 
   checkFinishLevel() {
+    console.log(this.currentLevel);
     if (this.playerChars.length === 0) {
       this.gameOver();
     } else if (this.enemyChars.length === 0) {
-      if (this.level < 4) {
-        this.level += 1;
-        this.startNewLevel(this.level);
+      if (this.currentLevel < 4) {
+        this.currentLevel += 1;
+        this.startNewLevel(this.currentLevel);
       } else {
         this.win();
       }
@@ -297,13 +302,13 @@ export default class GameController {
   startNewLevel(level) {
     switch (level) {
       case 2:
-        startSecondLevel();
+        this.startSecondLevel();
         break;
       case 3:
-        startThirdLevel();
+        this.startThirdLevel();
         break;
       case 4:
-        startFourthLevel();
+        this.startFourthLevel();
         break;
       default:
         break;
