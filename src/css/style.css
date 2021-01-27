@@ -27,6 +27,25 @@ body {
   border: none;
 }
 
+.hidden {
+  display: none;
+}
+
+.tooltip {
+  position: absolute;
+  padding: 5px;
+  background-color: black;
+  border: #525252 1px solid;
+  border-radius: 3px;
+  color: #e7e7e7;
+  z-index: 10;
+  font-size: 80%;
+}
+
+.tooltip-icon {
+  
+}
+
 .controls {
   text-align: center;
   margin: 50px 0;
@@ -170,7 +189,7 @@ body {
   width: var(--cell-size);
   height: var(--cell-size);
   position: absolute;
-  z-index: 99;
+  z-index: 5;
 }
 
 .character.generic {
@@ -238,6 +257,18 @@ body {
   color: #f00;
   font-weight: bold;
   animation: 500ms fade ease-out;
+}
+
+.blocker {
+  opacity: 0;
+  background-color: black;
+  cursor: not-allowed;
+  position: fixed;
+  top: 136px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
 }
 
 @keyframes fade {

@@ -8,7 +8,9 @@ import Magician from './Characters/Magician';
 import Swordsman from './Characters/Swordsman';
 import Undead from './Characters/Undead';
 import Vampire from './Characters/Vampire';
-import cursors from './cursors'
+import cursors from './cursors';
+import icons from './icons';
+import themes from './themes';
 
 export default class GameController {
   constructor(gamePlay, stateService) {
@@ -26,21 +28,16 @@ export default class GameController {
     this.canMove = false;
     this.canAttack = false;
     this.isPlayerTurn = true;
+    this.currentLevel = 1;
   }
 
-  startNewGame() {
-    this.playerChars = generateTeam([Swordsman, Bowman], 1, 2);
-    this.enemyChars = generateTeam([Daemon, Undead, Vampire], 1, 2);
-    this.allChars = this.playerChars.concat(this.enemyChars);
-    return this.allChars;
-  }
 
   /**
    * add event listeners to gamePlay events
    * load saved state from stateService
    */
   init() {
-    this.gamePlay.drawUi('prairie');
+    this.gamePlay.drawUi(themes.prairie);
     this.addListeners();
     this.gamePlay.redrawPositions(this.startNewGame());
   }
@@ -120,7 +117,8 @@ export default class GameController {
     this.gamePlay.redrawPositions(this.allChars);
   }
 
-  enemyTurn() {
+  async enemyTurn() {
+    this.setBlocker(true);
     const enemyAction = () => {
       const rand = randomInt(0, this.enemyChars.length - 1);
       this.defineCurrentEnemy(this.enemyChars[rand].position);
@@ -131,7 +129,7 @@ export default class GameController {
           const charInRange = this.playerChars.filter((char) => char.position === index);
           if (charInRange.length > 0) {
             detected = charInRange;
-          } 
+          }
         });
         return detected;
       }
@@ -145,67 +143,82 @@ export default class GameController {
       }
 
       this.isPlayerTurn = true;
+      this.setBlocker(false);
     }
     setTimeout(enemyAction, 1000);
   }
 
-  attack(attacking, defending) {
-    defending.character.health -= attacking.character.attack;
-    console.log(attacking);
-    console.log(defending);
-    if (defending.character.health <= 0) {
-      this.removeChar(defending);
+  async attack(attacker, target) {
+    let damage = Math.floor(Math.max(attacker.character.attack - target.character.defence, attacker.character.attack * 0.1));
+    await this.gamePlay.showDamage(target.position, damage);
+    target.character.health -= damage;
+    if (target.character.health <= 0) {
+      this.killChar(target);
     }
+    this.gamePlay.redrawPositions(this.allChars);
   }
 
-  removeChar(char) {
-    
+  killChar(char) {
+    this.playerChars = this.playerChars.filter((o) => o != char);
+    this.enemyChars = this.enemyChars.filter((o) => o != char);
+    this.allChars = this.allChars.filter((o) => o != char);
+    this.checkFinishLevel();
   }
 
-  onCellClick(index) {
+
+  checkFinishLevel() {
+    if (this.playerChars.length === 0) {
+      this.gameOver();
+    } else if (this.enemyChars.length === 0) {
+      if (this.level < 4) {
+        this.level += 1;
+        this.startNewLevel(this.level);
+      } else {
+        this.win();
+      }
+    } 
+  }
+
+  async onCellClick(index) {
     const charInCell = event.target;
     // проверить, принадлежит ли персонаж игроку
     const isCharInCell = charInCell && GameController.checkChar(charInCell, ['Bowman', 'Swordsman', 'Magician']);
-    const isEnemyChar = GameController.checkChar(charInCell, ['Undead', 'Zombie', 'Daemon']);
+    const isEnemyChar = GameController.checkChar(charInCell, ['Undead', 'Vampire', 'Daemon']);
 
+    // если клик по вражескому персонажу
     if (isEnemyChar) {
+      // если входит в радиус атаки
       if (this.canAttack) {
-        const defending = this.enemyChars.filter((char) => char.position === index)[0];
-        this.attack(this.currentChar, defending)
-        this.enemyTurn();
+        const target = this.enemyChars.filter((char) => char.position === index)[0];
+        await this.attack(this.currentChar, target);
+        await this.enemyTurn();
       } else {
         GamePlay.showError('This is an enemy character!');
       }
-      
-    }
-
-    if (isCharInCell) {
+      // если клик по персонажу игрока
+    } else if (isCharInCell) {
       if (this.currentChar) {
         this.gamePlay.deselectCell(this.currentChar.position);
       }
       this.selectChar(index);
+      // если персонаж выбран и клик в зоне движения
+    } else if (this.currentChar && this.canMove) {
+      this.movePlayerChar(this.currentChar, index);
     }
-
-    if (this.currentChar) {
-      if (this.canMove) {
-        this.movePlayerChar(this.currentChar, index);
-      }
-    }
-
   }
 
   onCellEnter(index) {
     const charInCell = event.target.querySelector('.character')
     if (charInCell) {
       const findChar = this.allChars.filter((char) => char.position === index)[0].character;
-      const message = `🎖️ ${findChar.level} ⚔ ${findChar.attack} 🛡️ ${findChar.defence} ♥️ ${findChar.health}`;
+      const message = `${icons.level} ${findChar.level} ${icons.attack} ${findChar.attack} ${icons.defence} ${findChar.defence} ${icons.health} ${findChar.health}`;
       this.gamePlay.showCellTooltip(message, index);
 
       // указатель для выбора своего персонажа
       if (GameController.checkChar(charInCell, ['Bowman', 'Swordsman', 'Magician'])) {
         this.gamePlay.setCursor('pointer');
         this.setAction(false, false);
-      //указатель для атаки
+        //указатель для атаки
       } else if (this.currentChar !== null && this.currentChar.areaAttack.indexOf(index) !== -1) {
         this.gamePlay.setCursor('crosshair');
         this.gamePlay.selectCell(index, 'red');
@@ -220,8 +233,6 @@ export default class GameController {
       this.gamePlay.setCursor('not-allowed');
       this.setAction(false, false);
     }
-    
-
   }
 
   onCellLeave(index) {
@@ -230,5 +241,74 @@ export default class GameController {
     if (this.gamePlay.cells[index].classList.contains('selected-green') || this.gamePlay.cells[index].classList.contains('selected-red')) {
       this.gamePlay.deselectCell(index);
     }
+  }
+
+  gameOver() {
+    alert('Game over!');
+  }
+
+  win() {
+    alert('Win');
+  }
+
+  startNewGame() {
+    this.playerChars = generateTeam([Swordsman, Bowman], 1, 2);
+    this.enemyChars = generateTeam([Daemon, Undead, Vampire], 1, 2);
+    this.allChars = this.playerChars.concat(this.enemyChars);
+    return this.allChars;
+  }
+
+  startSecondLevel() {
+    this.gamePlay.drawUi(themes.desert);
+    let newChars = generateTeam([Swordsman, Bowman, Magician], 1, 1);
+    this.playerChars = this.playerChars.concat(newChars);
+    this.enemyChars = generateTeam([Daemon, Undead, Vampire], 2, this.playerChars.length);
+    this.allChars = this.playerChars.concat(this.enemyChars);
+  }
+
+  startThirdLevel() {
+    this.gamePlay.drawUi(themes.arctic);
+    let newChars = generateTeam([Swordsman, Bowman, Magician], 2, 2);
+    this.playerChars = this.playerChars.concat(newChars);
+    this.enemyChars = generateTeam([Daemon, Undead, Vampire], 2, this.playerChars.length);
+    this.allChars = this.playerChars.concat(this.enemyChars);
+  }
+
+  startFourthLevel() {
+    this.gamePlay.drawUi(themes.mountain);
+    let newChars = generateTeam([Swordsman, Bowman, Magician], 3, 2);
+    this.playerChars = this.playerChars.concat(newChars);
+    this.enemyChars = generateTeam([Daemon, Undead, Vampire], 4, this.playerChars.length);
+    this.allChars = this.playerChars.concat(this.enemyChars);
+  }
+
+  restoreHealth() {
+    this.playerChars.forEach(char => char.character.health = 100);
+  }
+
+  setBlocker(block) {
+    if (block) {
+      this.gamePlay.blocker.classList.remove('hidden');
+    } else {
+      this.gamePlay.blocker.classList.add('hidden');
+    }
+  }
+
+  startNewLevel(level) {
+    switch (level) {
+      case 2:
+        startSecondLevel();
+        break;
+      case 3:
+        startThirdLevel();
+        break;
+      case 4:
+        startFourthLevel();
+        break;
+      default:
+        break;
+    }
+    this.restoreHealth();
+    this.gamePlay.redrawPositions(this.allChars);
   }
 }

@@ -12,6 +12,8 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
+    this.tooltip = null;
+    this.blocker = null;
   }
 
   bindToDOM(container) {
@@ -61,6 +63,8 @@ export default class GamePlay {
     }
 
     this.cells = Array.from(this.boardEl.children);
+    this.createTooltip();
+    this.createBlocker();
   }
 
   /**
@@ -196,12 +200,25 @@ export default class GamePlay {
       .filter(o => o.startsWith('selected')));
   }
 
+  createTooltip() {
+    this.tooltip = document.createElement('div');
+    this.tooltip.classList.add('tooltip');
+    this.tooltip.classList.add('hidden');
+    document.body.append(this.tooltip);
+  }
+
   showCellTooltip(message, index) {
-    this.cells[index].title = message;
+    // this.cells[index].dataset.tooltip = message;
+    this.tooltip.innerHTML = message;
+    this.tooltip.classList.remove('hidden');
+    this.tooltip.style.left = window.event.clientX + 5 + 'px';
+    this.tooltip.style.top = window.event.clientY + 5 +'px';
   }
 
   hideCellTooltip(index) {
-    this.cells[index].title = '';
+    // this.cells[index].dataset.tooltip = '';
+    this.tooltip.innerHTML = '';
+    this.tooltip.classList.add('hidden');
   }
   
   showDamage(index, damage) {
@@ -227,5 +244,12 @@ export default class GamePlay {
     if (this.container === null) {
       throw new Error('GamePlay not bind to DOM');
     }
+  }
+
+  createBlocker() {
+    this.blocker = document.createElement('div');
+    this.blocker.classList.add('blocker');
+    this.blocker.classList.add('hidden');
+    document.body.append(this.blocker);
   }
 }

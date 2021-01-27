@@ -38,7 +38,7 @@ export function generateTeam(allowedTypes, maxLevel, characterCount) {
   const team = [];
   for (let i = 0; i < characterCount; i++) {
     const char = characterGenerator(allowedTypes, maxLevel);
-    team.push(char)
+    team.push(char);
   }
   return team;
   // TODO: write logic here
