@@ -2,6 +2,7 @@ import { generateTeam } from './generators';
 import randomInt from './randomInt';
 import Board from './Board';
 import GamePlay from './GamePlay';
+import GameStateService from './GameStateService';
 import Bowman from './Characters/Bowman';
 import Daemon from './Characters/Daemon';
 import Magician from './Characters/Magician';
@@ -40,9 +41,8 @@ export default class GameController {
     this.gamePlay.drawUi(themes.prairie);
     this.addListeners();
     this.gamePlay.redrawPositions(this.startNewGame());
-    this.currentChar = null;
-    this.currentEnemy = null;
-    this.isPlayerTurn = true;
+    this.nullify();
+    this.deselectAll();
     this.currentLevel = 1;
   }
 
@@ -51,6 +51,8 @@ export default class GameController {
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
     this.gamePlay.addCellClickListener(this.onCellClick);
     this.gamePlay.addNewGameListener(() => this.init());
+    this.gamePlay.addSaveGameListener(() => this.saving());
+    this.gamePlay.addLoadGameListener(() => this.loading());
   }
 
   /**
@@ -166,6 +168,9 @@ export default class GameController {
     this.playerChars = this.playerChars.filter((o) => o != char);
     this.enemyChars = this.enemyChars.filter((o) => o != char);
     this.allChars = this.allChars.filter((o) => o != char);
+    this.deselectAll();
+    this.currentChar = null;
+    this.currentEnemy = null;
     this.checkFinishLevel();
   }
 
@@ -300,6 +305,7 @@ export default class GameController {
   }
 
   startNewLevel(level) {
+    this.nullify();
     switch (level) {
       case 2:
         this.startSecondLevel();
@@ -316,4 +322,50 @@ export default class GameController {
     this.restoreHealth();
     this.gamePlay.redrawPositions(this.allChars);
   }
+
+  deselectAll() {
+    for (let i = 0; i < 64; i += 1) {
+      this.gamePlay.deselectCell(i);
+    }
+  }
+
+  nullify() {
+    this.currentChar = null;
+    this.currentEnemy = null;
+    this.isPlayerTurn = true;    
+  }
+
+  saving() {
+    this.stateService.save({
+      level: this.currentLevel,
+      playerChars: this.playerChars,
+      enemyChars: this.enemyChars,
+    });
+  }
+
+  loading() {
+    let loadedGame = this.stateService.load();
+    this.currentLevel = loadedGame.level;
+    switch (this.currentLevel) {
+      case 1:
+        this.gamePlay.drawUi(themes.prairie);
+        break;
+      case 2:
+        this.gamePlay.drawUi(themes.desert);
+        break;
+      case 3:
+        this.gamePlay.drawUi(themes.arctic);
+        break;
+      case 4:
+        this.gamePlay.drawUi(themes.mountain);
+        break;
+      default:
+        break;
+    }
+    this.playerChars = loadedGame.playerChars;
+    this.enemyChars = loadedGame.enemyChars;
+    this.allChars = this.playerChars.concat(this.enemyChars);
+    this.gamePlay.redrawPositions(this.allChars);
+    this.deselectAll();
+  };
 }
