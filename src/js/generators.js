@@ -1,5 +1,5 @@
-import PositionedCharacter from './PositionedCharacter'
-
+import Team from './Team';
+import { getRandomInteger } from './utils';
 /**
  * Generates random characters
  *
@@ -7,57 +7,15 @@ import PositionedCharacter from './PositionedCharacter'
  * @param maxLevel max character level
  * @returns Character type children (ex. Magician, Bowman, etc)
  */
-export function characterGenerator(allowedTypes, maxLevel) {
-  // TODO: write logic here
-  let rand = Math.floor(Math.random() * allowedTypes.length);
-  let level = Math.floor(Math.random() * maxLevel + 1)
-  const [playerPositions, enemyPositions] = defineColumns(8);
-  
-  const newChar = new allowedTypes[rand](1);
-  
-  if (level > 1) {
-    for (let i = 0; i < level - 1; i++) {
-      newChar.levelUp();
-    }
-  }
-
-  let positions = [];
-  if (newChar.type === 'Bowman' || newChar.type === 'Magician' || newChar.type === 'Swordsman' ) {
-    positions = playerPositions;
-  } else {
-    positions = enemyPositions;
-  }
-  let randomPosition = positions[Math.floor(Math.random() * positions.length)]
-  
-  const newPosChar = new PositionedCharacter(newChar, randomPosition);
-
-  return newPosChar;
+export function* characterGenerator(allowedTypes, maxLevel) {
+  const index = getRandomInteger(0, allowedTypes.length - 1);
+  yield new allowedTypes[index](maxLevel);
 }
 
 export function generateTeam(allowedTypes, maxLevel, characterCount) {
-  const team = [];
-  for (let i = 0; i < characterCount; i++) {
-    const char = characterGenerator(allowedTypes, maxLevel);
-    team.push(char);
+  const team = new Team();
+  for (let i = 0; i < characterCount; i += 1) {
+    team.add(...characterGenerator(allowedTypes, getRandomInteger(1, maxLevel)));
   }
   return team;
-  // TODO: write logic here
-}
-
-function defineColumns(boardSize) {
-  let columnPlayer = []; 
-  let columnEnemy = [];
-  for (let i = 0; i < boardSize * boardSize; i += boardSize) {
-    columnPlayer.push(i);
-  }
-  for (let i = 1; i < boardSize * boardSize; i += boardSize) {
-    columnPlayer.push(i);
-  }
-  for (let i = boardSize - 1; i < boardSize * boardSize; i += boardSize) {
-    columnEnemy.push(i);
-  }
-  for (let i = boardSize - 2; i < boardSize * boardSize; i += boardSize) {
-    columnEnemy.push(i);
-  }
-  return [columnPlayer, columnEnemy];
 }

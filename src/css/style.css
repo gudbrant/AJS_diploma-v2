@@ -27,25 +27,6 @@ body {
   border: none;
 }
 
-.hidden {
-  display: none;
-}
-
-.tooltip {
-  position: absolute;
-  padding: 5px;
-  background-color: black;
-  border: #525252 1px solid;
-  border-radius: 3px;
-  color: #e7e7e7;
-  z-index: 10;
-  font-size: 80%;
-}
-
-.tooltip-icon {
-  
-}
-
 .controls {
   text-align: center;
   margin: 50px 0;
@@ -56,6 +37,23 @@ body {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.information {
+  width: 50%;
+  height: 50px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.info-level, .info-points, .info-player {
+  width: 33.3%;
+  text-align: center;
 }
 
 .board {
@@ -189,38 +187,38 @@ body {
   width: var(--cell-size);
   height: var(--cell-size);
   position: absolute;
-  z-index: 5;
+  z-index: 99;
 }
 
 .character.generic {
   background: url('../img/characters/generic.png');
 }
 
-.character.Bowman {
+.character.bowman {
   background: url('../img/characters/bowman.png');
 }
 
-.character.Daemon {
+.character.daemon {
   background: url('../img/characters/daemon.png');
 }
 
-.character.Magician {
+.character.magician {
   background: url('../img/characters/magician.png');
 }
 
-.character.Swordsman {
+.character.swordsman {
   background: url('../img/characters/swordsman.png');
 }
 
-.character.Undead {
+.character.undead {
   background: url('../img/characters/undead.png');
 }
 
-.character.Vampire {
+.character.vampire {
   background: url('../img/characters/vampire.png');
 }
 
-.character.Zombie {
+.character.zombie {
   background: url('../img/characters/zombie.png');
 }
 
@@ -257,18 +255,6 @@ body {
   color: #f00;
   font-weight: bold;
   animation: 500ms fade ease-out;
-}
-
-.blocker {
-  opacity: 0;
-  background-color: black;
-  cursor: not-allowed;
-  position: fixed;
-  top: 136px;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 900;
 }
 
 @keyframes fade {

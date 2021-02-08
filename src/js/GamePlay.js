@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 import { calcHealthLevel, calcTileType } from './utils';
 
 export default class GamePlay {
@@ -12,8 +13,9 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
-    this.tooltip = null;
-    this.blocker = null;
+    this.levelElement = null;
+    this.pointsElement = null;
+    this.playerElement = null;
   }
 
   bindToDOM(container) {
@@ -40,15 +42,20 @@ export default class GamePlay {
       <div class="board-container">
         <div data-id="board" class="board"></div>
       </div>
+      <div class="information">
+        <div data-id="info-level" class="info-level"></div>
+        <div data-id="info-points" class="info-points"></div>
+        <div data-id="info-player" class="info-player"></div>
+      </div>
     `;
 
     this.newGameEl = this.container.querySelector('[data-id=action-restart]');
     this.saveGameEl = this.container.querySelector('[data-id=action-save]');
     this.loadGameEl = this.container.querySelector('[data-id=action-load]');
 
-    this.newGameEl.addEventListener('click', event => this.onNewGameClick(event));
-    this.saveGameEl.addEventListener('click', event => this.onSaveGameClick(event));
-    this.loadGameEl.addEventListener('click', event => this.onLoadGameClick(event));
+    this.newGameEl.addEventListener('click', (event) => this.onNewGameClick(event));
+    this.saveGameEl.addEventListener('click', (event) => this.onSaveGameClick(event));
+    this.loadGameEl.addEventListener('click', (event) => this.onLoadGameClick(event));
 
     this.boardEl = this.container.querySelector('[data-id=board]');
 
@@ -56,15 +63,17 @@ export default class GamePlay {
     for (let i = 0; i < this.boardSize ** 2; i += 1) {
       const cellEl = document.createElement('div');
       cellEl.classList.add('cell', 'map-tile', `map-tile-${calcTileType(i, this.boardSize)}`);
-      cellEl.addEventListener('mouseenter', event => this.onCellEnter(event));
-      cellEl.addEventListener('mouseleave', event => this.onCellLeave(event));
-      cellEl.addEventListener('click', event => this.onCellClick(event));
+      cellEl.addEventListener('mouseenter', (event) => this.onCellEnter(event));
+      cellEl.addEventListener('mouseleave', (event) => this.onCellLeave(event));
+      cellEl.addEventListener('click', (event) => this.onCellClick(event));
       this.boardEl.appendChild(cellEl);
     }
 
     this.cells = Array.from(this.boardEl.children);
-    this.createTooltip();
-    this.createBlocker();
+
+    this.levelElement = this.container.querySelector('[data-id=info-level]');
+    this.pointsElement = this.container.querySelector('[data-id=info-points]');
+    this.playerElement = this.container.querySelector('[data-id=info-player]');
   }
 
   /**
@@ -104,6 +113,10 @@ export default class GamePlay {
     this.cellEnterListeners.push(callback);
   }
 
+  removeCellEnterListener() {
+    this.cellEnterListeners.splice(0, this.cellEnterListeners.length);
+  }
+
   /**
    * Add listener to mouse leave for cell
    *
@@ -113,6 +126,10 @@ export default class GamePlay {
     this.cellLeaveListeners.push(callback);
   }
 
+  removeCellLeaveListener() {
+    this.cellLeaveListeners.splice(0, this.cellLeaveListeners.length);
+  }
+
   /**
    * Add listener to mouse click for cell
    *
@@ -120,6 +137,10 @@ export default class GamePlay {
    */
   addCellClickListener(callback) {
     this.cellClickListeners.push(callback);
+  }
+
+  removeCellClickListener() {
+    this.cellClickListeners.splice(0, this.cellClickListeners.length);
   }
 
   /**
@@ -152,33 +173,33 @@ export default class GamePlay {
   onCellEnter(event) {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellEnterListeners.forEach(o => o.call(null, index));
+    this.cellEnterListeners.forEach((o) => o.call(null, index));
   }
 
   onCellLeave(event) {
     event.preventDefault();
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellLeaveListeners.forEach(o => o.call(null, index));
+    this.cellLeaveListeners.forEach((o) => o.call(null, index));
   }
 
   onCellClick(event) {
     const index = this.cells.indexOf(event.currentTarget);
-    this.cellClickListeners.forEach(o => o.call(null, index));
+    this.cellClickListeners.forEach((o) => o.call(null, index));
   }
 
   onNewGameClick(event) {
     event.preventDefault();
-    this.newGameListeners.forEach(o => o.call(null));
+    this.newGameListeners.forEach((o) => o.call(null));
   }
 
   onSaveGameClick(event) {
     event.preventDefault();
-    this.saveGameListeners.forEach(o => o.call(null));
+    this.saveGameListeners.forEach((o) => o.call(null));
   }
 
   onLoadGameClick(event) {
     event.preventDefault();
-    this.loadGameListeners.forEach(o => o.call(null));
+    this.loadGameListeners.forEach((o) => o.call(null));
   }
 
   static showError(message) {
@@ -197,30 +218,17 @@ export default class GamePlay {
   deselectCell(index) {
     const cell = this.cells[index];
     cell.classList.remove(...Array.from(cell.classList)
-      .filter(o => o.startsWith('selected')));
-  }
-
-  createTooltip() {
-    this.tooltip = document.createElement('div');
-    this.tooltip.classList.add('tooltip');
-    this.tooltip.classList.add('hidden');
-    document.body.append(this.tooltip);
+      .filter((o) => o.startsWith('selected')));
   }
 
   showCellTooltip(message, index) {
-    // this.cells[index].dataset.tooltip = message;
-    this.tooltip.innerHTML = message;
-    this.tooltip.classList.remove('hidden');
-    this.tooltip.style.left = window.event.clientX + 5 + 'px';
-    this.tooltip.style.top = window.event.clientY + 5 +'px';
+    this.cells[index].title = message;
   }
 
   hideCellTooltip(index) {
-    // this.cells[index].dataset.tooltip = '';
-    this.tooltip.innerHTML = '';
-    this.tooltip.classList.add('hidden');
+    this.cells[index].title = '';
   }
-  
+
   showDamage(index, damage) {
     return new Promise((resolve) => {
       const cell = this.cells[index];
@@ -246,10 +254,15 @@ export default class GamePlay {
     }
   }
 
-  createBlocker() {
-    this.blocker = document.createElement('div');
-    this.blocker.classList.add('blocker');
-    this.blocker.classList.add('hidden');
-    document.body.append(this.blocker);
+  setLevelInfo(level) {
+    this.levelElement.textContent = `Level: ${level}`;
+  }
+
+  setUserPointsInfo(points) {
+    this.pointsElement.textContent = `User points: ${points}`;
+  }
+
+  setPlayerInfo(player) {
+    this.playerElement.textContent = `Player: ${player}`;
   }
 }
