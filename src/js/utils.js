@@ -49,17 +49,21 @@ export function positionToCoords(position) {
 export function getAvailableHorizontalVerticalPositionsByValue(selectedCoords, parameter) {
   const coords = [];
 
+  // сверху по вертикали
   for (let i = 1, j = 0; selectedCoords[1] - i >= 0 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0], selectedCoords[1] - i]);
+    i += 1, j += 1) coords.push([selectedCoords[0], selectedCoords[1] - i]);
 
+  // справа по горизонтали
   for (let i = 1, j = 0; selectedCoords[0] + i <= 7 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1]]);
+    i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1]]);
 
+  // снизу по вертикали
   for (let i = 1, j = 0; selectedCoords[1] + i <= 7 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0], selectedCoords[1] + i]);
+    i += 1, j += 1) coords.push([selectedCoords[0], selectedCoords[1] + i]);
 
+  // слева по горизонтали
   for (let i = 1, j = 0; selectedCoords[0] - i >= 0 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1]]);
+    i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1]]);
 
   return coords.map((value) => coordsToPosition(value[0], value[1]));
 }
@@ -69,21 +73,25 @@ export function getAvailableMovePositions(selectedCoords, parameter) {
 
   const coords = [];
 
+  // сверху слева по диагонали
   for (let i = 1, j = 0;
-       selectedCoords[0] - i >= 0 && selectedCoords[1] - i >= 0 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1] - i]);
+    selectedCoords[0] - i >= 0 && selectedCoords[1] - i >= 0 && j < parameter;
+    i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1] - i]);
 
+  // сверху справа по диагонали
   for (let i = 1, j = 0;
-       selectedCoords[0] + i <= 7 && selectedCoords[1] - i >= 0 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1] - i]);
+    selectedCoords[0] + i <= 7 && selectedCoords[1] - i >= 0 && j < parameter;
+    i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1] - i]);
 
+  // снизу справа по диагонали
   for (let i = 1, j = 0;
-       selectedCoords[0] + i <= 7 && selectedCoords[1] + i <= 7 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1] + i]);
+    selectedCoords[0] + i <= 7 && selectedCoords[1] + i <= 7 && j < parameter;
+    i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1] + i]);
 
+  // снизу слева по диагонали
   for (let i = 1, j = 0;
-       selectedCoords[0] - i >= 0 && selectedCoords[1] + i <= 7 && j < parameter;
-       i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1] + i]);
+    selectedCoords[0] - i >= 0 && selectedCoords[1] + i <= 7 && j < parameter;
+    i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1] + i]);
 
   return (coords.map((value) => coordsToPosition(value[0], value[1])).concat(hvPositions))
     .sort((a, b) => a - b);
@@ -103,10 +111,12 @@ export function getAvailableAttackPositions(selectedCoords, parameter) {
 
   const hvPositions = getAvailableHorizontalVerticalPositionsByValue(selectedCoords, parameter);
 
+  // сверху и снизу слева квадраты
   for (let i = selectedCoords[0] - 1; i >= 0 && i >= selectedCoords[0] - parameter; i -= 1) {
     repeatedY(i, selectedCoords[1], parameter);
   }
 
+  // сверху и снизу справа квадраты
   for (let i = selectedCoords[0] + 1; i <= 7 && i <= selectedCoords[0] + parameter; i += 1) {
     repeatedY(i, selectedCoords[1], parameter);
   }
@@ -116,8 +126,17 @@ export function getAvailableAttackPositions(selectedCoords, parameter) {
 }
 
 export function getAvailablePositions(selectedCharacter, selectedPosition) {
+  // console.log(`Персонаж = ${selectedCharacter.type},
+  // позиция выбранного персонажа = ${selectedPosition}`);
   const selectedCoords = positionToCoords(selectedPosition);
+  // console.log(`Координаты выбранного персонажа = ${selectedCoords}`);
+
+  // console.log(`Дистанция перемещения персонажа = ${selectedCharacter.moveDistance}`);
   const movePositions = getAvailableMovePositions(selectedCoords, selectedCharacter.moveDistance);
-  const attackPositions = getAvailableAttackPositions(selectedCoords, selectedCharacter.attackDistance);
+
+  // console.log(`Дистанция атаки персонажа = ${selectedCharacter.attackDistance}`);
+  const attackPositions = getAvailableAttackPositions(selectedCoords,
+    selectedCharacter.attackDistance);
+
   return [movePositions, attackPositions];
 }
