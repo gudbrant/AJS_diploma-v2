@@ -1,12 +1,12 @@
 import Character from '../Character';
+import { computerCharactersTypes } from '../data';
 
-export default class Vampire  extends Character {
-  constructor (level) {
-    super(level, 'Vampire');
-    this.attack = 40;
-    this.defence = 10;
-    this.health = 100;
-    this.distanceAttack = 2;
-    this.distanceMove = 2;
+export default class Vampire extends Character {
+  constructor(level) {
+    super(level, computerCharactersTypes[2]);
+    this.attack = 25;
+    this.defence = 25;
+    this.moveDistance = 2;
+    this.attackDistance = 2;
   }
 }

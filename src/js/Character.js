@@ -1,21 +1,21 @@
 export default class Character {
   constructor(level, type = 'generic', name = '') {
     if (new.target.name === 'Character') {
-      throw new Error('Запрещено создавать объекты класса Character')
+      throw new Error('Запрещено создавать объекты класса Character');
     }
+    this.name = name;
     this.level = level;
     this.attack = 0;
     this.defence = 0;
-    this.health = 50;
+    this.health = 100;
     this.type = type;
-    // TODO: throw error if user use "new Character()"
   }
 
   setValues(attack, defence, health) {
-    this.attack = attack
+    this.attack = attack;
     this.defence = defence;
     this.health = health;
-    }
+  }
 
   levelUp() {
     this.level += 1;

@@ -1,12 +1,12 @@
 import Character from '../Character';
+import { computerCharactersTypes } from '../data';
 
 export default class Undead extends Character {
-  constructor (level) {
-    super(level, 'Undead');
-    this.attack = 25;
-    this.defence = 25;
-    this.health = 100;
-    this.distanceAttack = 1;
-    this.distanceMove = 4;
+  constructor(level) {
+    super(level, computerCharactersTypes[1]);
+    this.attack = 40;
+    this.defence = 10;
+    this.moveDistance = 4;
+    this.attackDistance = 1;
   }
 }
