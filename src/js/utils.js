@@ -1,21 +1,96 @@
+// eslint-disable-next-line object-curly-newline
+import { Bowman, Daemon, Magician, Swordsman, Undead, Vampire } from './CharacterTypes';
+import PositionedCharacter from './PositionedCharacter';
+
+export function convertIndexToCoordinates(index, boardSize) {
+  return { x: index % boardSize, y: Math.floor(index / boardSize) };
+}
+
 export function calcTileType(index, boardSize) {
-  if (index === 0) return 'top-left';
-
-  if (index === (boardSize - 1)) return 'top-right';
-
-  if (index === (boardSize ** 2 - 1)) return 'bottom-right';
-
-  if (index === (boardSize ** 2 - boardSize)) return 'bottom-left';
-
-  if (index > 0 && index < (boardSize - 1)) return 'top';
-
-  if ((index % boardSize) === (boardSize - 1)) return 'right';
-
-  if (index > (boardSize ** 2 - boardSize) && index < (boardSize ** 2 - 1)) return 'bottom';
-
-  if ((index % boardSize) === 0) return 'left';
-
+  // TODO: write logic here
+  const { x, y } = convertIndexToCoordinates(index, boardSize);
+  if (x === 0) {
+    if (y === 0) return 'top-left';
+    if (y === boardSize - 1) return 'bottom-left';
+    return 'left';
+  }
+  if (x === boardSize - 1) {
+    if (y === 0) return 'top-right';
+    if (y === boardSize - 1) return 'bottom-right';
+    return 'right';
+  }
+  if (y === 0) return 'top';
+  if (y === boardSize - 1) return 'bottom';
   return 'center';
+}
+
+export default function generateRandomPositions(characterCount, player, boardSize = 8) {
+  const positions = [];
+  const possiblePositions = [];
+  for (let i = 0; i < boardSize ** 2; i += boardSize) {
+    if (player === 'user') possiblePositions.push(i, i + 1);
+    if (player === 'bot') possiblePositions.push(i + boardSize - 2, i + boardSize - 1);
+  }
+  let possibleCountPos = boardSize * 2;
+  for (let i = 0; i < characterCount; i += 1) {
+    const position = Math.floor(Math.random() * possibleCountPos);
+    positions.push(possiblePositions[position]);
+    possiblePositions.splice(position, 1);
+    possibleCountPos -= 1;
+  }
+  return positions;
+}
+
+export function calcAttackDefence(character) {
+  const ch = character;
+  ch.attack += ch.baseAttack * 0.20;
+  ch.defence += ch.baseDefence * 0.20;
+  if (ch.attack > ch.maxAttack) ch.attack = ch.maxAttack;
+  if (ch.defence > ch.maxDefence) ch.defence = ch.maxDefence;
+}
+
+export function checkDistance(index, selectedCharacter, action, boardSize) {
+  const start = { ...convertIndexToCoordinates(selectedCharacter.position, boardSize) };
+  const end = { ...convertIndexToCoordinates(index, boardSize) };
+  const actionRange = action === 'move' ? 'movementRange' : 'attackRange';
+  return (Math.abs(start.x - end.x) <= selectedCharacter.character[actionRange])
+    && (Math.abs(start.y - end.y) <= selectedCharacter.character[actionRange]);
+}
+
+export function calcDamage(attacker, target) {
+  const absorbedDamage = (attacker.attack * (target.defence / 100));
+  return Math.round(parseFloat((attacker.attack - absorbedDamage).toFixed(1)));
+}
+
+export function makeDamage(damage, posCharacter, team) {
+  const { character: target } = posCharacter;
+  target.health -= damage;
+  if (target.health <= 0) team.deleteMember(posCharacter);
+  else target.health = parseFloat(target.health.toFixed(1));
+}
+
+export function levelUpCharacters(team) {
+  for (const posCharacter of team.members) {
+    const { character } = posCharacter;
+    character.level += 1;
+    calcAttackDefence(character);
+    character.health += 80;
+    if (character.health > 100) character.health = 100;
+  }
+}
+
+export function recreateCharacters(team) {
+  const chConstructors = {
+    Swordsman, Bowman, Magician, Vampire, Undead, Daemon,
+  };
+  const recreatedCharacters = [];
+  for (const posCharacter of team.members) {
+    let { character } = posCharacter;
+    const constructorName = character.type[0].toUpperCase() + character.type.slice(1);
+    character = new (chConstructors[constructorName])(character);
+    recreatedCharacters.push(new PositionedCharacter(character, posCharacter.position));
+  }
+  return recreatedCharacters;
 }
 
 export function calcHealthLevel(health) {
@@ -30,113 +105,15 @@ export function calcHealthLevel(health) {
   return 'high';
 }
 
-export function getRandomInteger(min, max) {
-  return Math.floor(min + (max + 1 - min) * Math.random());
-}
-
-export function coordsToPosition(x, y) {
-  if (x < 0 || x > 7 || y < 0 || y > 7) throw new Error('Неверные координаты игрового поля');
-  return x + y * 8;
-}
-
-export function positionToCoords(position) {
-  if (position < 0 || position > 63) throw new Error('Неверная позиция игрового поля');
-  const x = Math.floor(position % 8);
-  const y = Math.floor(position / 8);
-  return [x, y];
-}
-
-export function getAvailableHorizontalVerticalPositionsByValue(selectedCoords, parameter) {
-  const coords = [];
-
-  // сверху по вертикали
-  for (let i = 1, j = 0; selectedCoords[1] - i >= 0 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0], selectedCoords[1] - i]);
-
-  // справа по горизонтали
-  for (let i = 1, j = 0; selectedCoords[0] + i <= 7 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1]]);
-
-  // снизу по вертикали
-  for (let i = 1, j = 0; selectedCoords[1] + i <= 7 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0], selectedCoords[1] + i]);
-
-  // слева по горизонтали
-  for (let i = 1, j = 0; selectedCoords[0] - i >= 0 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1]]);
-
-  return coords.map((value) => coordsToPosition(value[0], value[1]));
-}
-
-export function getAvailableMovePositions(selectedCoords, parameter) {
-  const hvPositions = getAvailableHorizontalVerticalPositionsByValue(selectedCoords, parameter);
-
-  const coords = [];
-
-  // сверху слева по диагонали
-  for (let i = 1, j = 0;
-    selectedCoords[0] - i >= 0 && selectedCoords[1] - i >= 0 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1] - i]);
-
-  // сверху справа по диагонали
-  for (let i = 1, j = 0;
-    selectedCoords[0] + i <= 7 && selectedCoords[1] - i >= 0 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1] - i]);
-
-  // снизу справа по диагонали
-  for (let i = 1, j = 0;
-    selectedCoords[0] + i <= 7 && selectedCoords[1] + i <= 7 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0] + i, selectedCoords[1] + i]);
-
-  // снизу слева по диагонали
-  for (let i = 1, j = 0;
-    selectedCoords[0] - i >= 0 && selectedCoords[1] + i <= 7 && j < parameter;
-    i += 1, j += 1) coords.push([selectedCoords[0] - i, selectedCoords[1] + i]);
-
-  return (coords.map((value) => coordsToPosition(value[0], value[1])).concat(hvPositions))
-    .sort((a, b) => a - b);
-}
-
-export function getAvailableAttackPositions(selectedCoords, parameter) {
-  const coords = [];
-
-  function repeatedY(x, selectedY, distance) {
-    for (let j = selectedY - 1; j >= 0 && j >= selectedY - distance; j -= 1) {
-      coords.push([x, j]);
-    }
-    for (let j = selectedY + 1; j <= 7 && j <= selectedY + distance; j += 1) {
-      coords.push([x, j]);
-    }
+export function calcScores(gameState) {
+  let sumOfHealth = 0;
+  for (const posCharacter of gameState.userTeam.members) {
+    const { character } = posCharacter;
+    sumOfHealth += character.health;
   }
-
-  const hvPositions = getAvailableHorizontalVerticalPositionsByValue(selectedCoords, parameter);
-
-  // сверху и снизу слева квадраты
-  for (let i = selectedCoords[0] - 1; i >= 0 && i >= selectedCoords[0] - parameter; i -= 1) {
-    repeatedY(i, selectedCoords[1], parameter);
-  }
-
-  // сверху и снизу справа квадраты
-  for (let i = selectedCoords[0] + 1; i <= 7 && i <= selectedCoords[0] + parameter; i += 1) {
-    repeatedY(i, selectedCoords[1], parameter);
-  }
-
-  return (coords.map((value) => coordsToPosition(value[0], value[1])).concat(hvPositions))
-    .sort((a, b) => a - b);
-}
-
-export function getAvailablePositions(selectedCharacter, selectedPosition) {
-  // console.log(`Персонаж = ${selectedCharacter.type},
-  // позиция выбранного персонажа = ${selectedPosition}`);
-  const selectedCoords = positionToCoords(selectedPosition);
-  // console.log(`Координаты выбранного персонажа = ${selectedCoords}`);
-
-  // console.log(`Дистанция перемещения персонажа = ${selectedCharacter.moveDistance}`);
-  const movePositions = getAvailableMovePositions(selectedCoords, selectedCharacter.moveDistance);
-
-  // console.log(`Дистанция атаки персонажа = ${selectedCharacter.attackDistance}`);
-  const attackPositions = getAvailableAttackPositions(selectedCoords,
-    selectedCharacter.attackDistance);
-
-  return [movePositions, attackPositions];
+  const scores = gameState.scores + sumOfHealth;
+  const maxScores = Math.max(gameState.maxScores, scores);
+  // eslint-disable-next-line no-console
+  console.log(`Current scores: ${scores}, Max scores: ${maxScores}`);
+  return { scores, maxScores };
 }

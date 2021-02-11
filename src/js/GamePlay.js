@@ -1,5 +1,8 @@
-/* eslint-disable no-alert */
 import { calcHealthLevel, calcTileType } from './utils';
+import lvlPic from '../img/stats/lvl.png';
+import attackPic from '../img/stats/attack.png';
+import defencePic from '../img/stats/defence.png';
+import healthPic from '../img/stats/health.png';
 
 export default class GamePlay {
   constructor() {
@@ -13,9 +16,6 @@ export default class GamePlay {
     this.newGameListeners = [];
     this.saveGameListeners = [];
     this.loadGameListeners = [];
-    this.levelElement = null;
-    this.pointsElement = null;
-    this.playerElement = null;
   }
 
   bindToDOM(container) {
@@ -42,11 +42,6 @@ export default class GamePlay {
       <div class="board-container">
         <div data-id="board" class="board"></div>
       </div>
-      <div class="information">
-        <div data-id="info-level" class="info-level"></div>
-        <div data-id="info-points" class="info-points"></div>
-        <div data-id="info-player" class="info-player"></div>
-      </div>
     `;
 
     this.newGameEl = this.container.querySelector('[data-id=action-restart]');
@@ -58,6 +53,7 @@ export default class GamePlay {
     this.loadGameEl.addEventListener('click', (event) => this.onLoadGameClick(event));
 
     this.boardEl = this.container.querySelector('[data-id=board]');
+    this.boardEl.style['grid-template-columns'] = `repeat(${this.boardSize}, 1fr)`;
 
     this.boardEl.classList.add(theme);
     for (let i = 0; i < this.boardSize ** 2; i += 1) {
@@ -70,10 +66,6 @@ export default class GamePlay {
     }
 
     this.cells = Array.from(this.boardEl.children);
-
-    this.levelElement = this.container.querySelector('[data-id=info-level]');
-    this.pointsElement = this.container.querySelector('[data-id=info-points]');
-    this.playerElement = this.container.querySelector('[data-id=info-player]');
   }
 
   /**
@@ -83,9 +75,11 @@ export default class GamePlay {
    */
   redrawPositions(positions) {
     for (const cell of this.cells) {
-      cell.innerHTML = '';
+      const characterEl = cell.getElementsByClassName('character');
+      const hintEl = cell.getElementsByClassName('hint');
+      if (characterEl.length !== 0) characterEl[0].remove();
+      if (hintEl.length !== 0) hintEl[0].remove();
     }
-
     for (const position of positions) {
       const cellEl = this.boardEl.children[position.position];
       const charEl = document.createElement('div');
@@ -113,10 +107,6 @@ export default class GamePlay {
     this.cellEnterListeners.push(callback);
   }
 
-  removeCellEnterListener() {
-    this.cellEnterListeners.splice(0, this.cellEnterListeners.length);
-  }
-
   /**
    * Add listener to mouse leave for cell
    *
@@ -126,10 +116,6 @@ export default class GamePlay {
     this.cellLeaveListeners.push(callback);
   }
 
-  removeCellLeaveListener() {
-    this.cellLeaveListeners.splice(0, this.cellLeaveListeners.length);
-  }
-
   /**
    * Add listener to mouse click for cell
    *
@@ -137,10 +123,6 @@ export default class GamePlay {
    */
   addCellClickListener(callback) {
     this.cellClickListeners.push(callback);
-  }
-
-  removeCellClickListener() {
-    this.cellClickListeners.splice(0, this.cellClickListeners.length);
   }
 
   /**
@@ -203,15 +185,16 @@ export default class GamePlay {
   }
 
   static showError(message) {
+    // eslint-disable-next-line no-alert
     alert(message);
   }
 
   static showMessage(message) {
+    // eslint-disable-next-line no-alert
     alert(message);
   }
 
   selectCell(index, color = 'yellow') {
-    this.deselectCell(index);
     this.cells[index].classList.add('selected', `selected-${color}`);
   }
 
@@ -221,12 +204,25 @@ export default class GamePlay {
       .filter((o) => o.startsWith('selected')));
   }
 
-  showCellTooltip(message, index) {
-    this.cells[index].title = message;
+  showCellTooltip(index, posCharacter) {
+    const cellEl = this.cells[index];
+    const hintEl = document.createElement('div');
+    hintEl.classList.add('hint');
+    hintEl.innerHTML = `
+    <img src="${lvlPic}"><span class="level">${posCharacter.character.level}</span>
+    <img src="${attackPic}"><span class="attack">${posCharacter.character.attack}</span>
+    <img src="${defencePic}"><span class="defence">${posCharacter.character.defence}</span>
+    <img src="${healthPic}"><span class="health">${posCharacter.character.health}</span>
+     `;
+    const { left: cellLeft, top: cellTop } = cellEl.getBoundingClientRect();
+    hintEl.style.left = `${cellLeft + 45}px`;
+    hintEl.style.top = `${cellTop + 45}px`;
+    cellEl.insertAdjacentElement('beforeend', hintEl);
   }
 
-  hideCellTooltip(index) {
-    this.cells[index].title = '';
+  hideCellTooltip() {
+    const hintEl = this.boardEl.getElementsByClassName('hint')[0];
+    if (hintEl) hintEl.remove();
   }
 
   showDamage(index, damage) {
@@ -236,7 +232,6 @@ export default class GamePlay {
       damageEl.textContent = damage;
       damageEl.classList.add('damage');
       cell.appendChild(damageEl);
-
       damageEl.addEventListener('animationend', () => {
         cell.removeChild(damageEl);
         resolve();
@@ -252,17 +247,5 @@ export default class GamePlay {
     if (this.container === null) {
       throw new Error('GamePlay not bind to DOM');
     }
-  }
-
-  setLevelInfo(level) {
-    this.levelElement.textContent = `Level: ${level}`;
-  }
-
-  setUserPointsInfo(points) {
-    this.pointsElement.textContent = `User points: ${points}`;
-  }
-
-  setPlayerInfo(player) {
-    this.playerElement.textContent = `Player: ${player}`;
   }
 }
