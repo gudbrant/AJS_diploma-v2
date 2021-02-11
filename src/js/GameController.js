@@ -40,6 +40,7 @@ export default class GameController {
     this.gameState.botTeam.createTeam('bot', this.gameState.level, this.gameState.userTeam.members.length, this.gamePlay.boardSize);
   }
 
+  // Перерисовывает игровое поле, если текущая тема не соответствует уровню
   redrawBoard() {
     let { level } = this.gameState;
     if (level > 4) level = 4;
@@ -75,6 +76,7 @@ export default class GameController {
     this.selectedCharacter = null;
     this.gamePlay.redrawPositions([...this.gameState.userTeam.members, ...this.gameState.botTeam.members]);
     if (this.gameState.currentPlayer === 'bot') {
+      // Действия бота
       const botAction = new BotAction(this.gamePlay, this.gameState);
       botAction.setPairAndAction();
       if (botAction.action === 'attack') {
@@ -135,6 +137,7 @@ export default class GameController {
     const userActions = new UserActions(this.gamePlay, this.gameState, this.selectedCharacter);
     let posCharacter = this.gameState.userTeam.members.find((el) => el.position === index);
     if (posCharacter) {
+      // Реакция на клик по персонажу пользователя
       this.selectedCharacter = userActions.onUserCellClick(posCharacter);
       return;
     }

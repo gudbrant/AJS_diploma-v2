@@ -53,6 +53,7 @@ export default class GamePlay {
     this.loadGameEl.addEventListener('click', (event) => this.onLoadGameClick(event));
 
     this.boardEl = this.container.querySelector('[data-id=board]');
+    // Добавлена отрисовка поля в зависимости от размера
     this.boardEl.style['grid-template-columns'] = `repeat(${this.boardSize}, 1fr)`;
 
     this.boardEl.classList.add(theme);

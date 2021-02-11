@@ -62,6 +62,7 @@ export function calcDamage(attacker, target) {
   return Math.round(parseFloat((attacker.attack - absorbedDamage).toFixed(1)));
 }
 
+// Наносит урон по персонажу, если персонаж уничтожен, то удаляет его из комманды
 export function makeDamage(damage, posCharacter, team) {
   const { character: target } = posCharacter;
   target.health -= damage;

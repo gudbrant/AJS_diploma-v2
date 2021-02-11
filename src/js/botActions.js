@@ -107,7 +107,6 @@ export default class BotAction {
     return y * this.gamePlay.boardSize + x;
   }
 
-  // Получить минимальное расстояние
   // eslint-disable-next-line class-methods-use-this
   getMinDistances(cellsRangeAndDistances) {
     let minDistance;
@@ -131,6 +130,7 @@ export default class BotAction {
     return cellsRangeAndDistances.filter((el) => el.distance === minDistance);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   getCellToMove(nearestCells) {
     if (nearestCells.length === 1) return nearestCells[0];
     const randomCellIndex = Math.floor(Math.random() * nearestCells.length);
@@ -165,6 +165,8 @@ export default class BotAction {
     const cellToAttackFrom = this.getCellToAttackFrom();
     let cellIndexToMove = this.convertCoordinatesToIndex(cellToAttackFrom.cell);
     while (!checkDistance(cellIndexToMove, this.attacker, this.action, this.gamePlay.boardSize)) {
+      // Вычислять ближайшую ячеку для перемещения, пока не найдется такая,
+      // которая будет в радиусе перемещения персонажа
       const cellsInTargetRange = this.getCellsInTargetRange(this.attacker.character.movementRange, cellIndexToMove);
       const cellsToMove = [];
       for (const cell of cellsInTargetRange) {

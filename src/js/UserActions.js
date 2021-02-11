@@ -16,6 +16,7 @@ export default class UserActions {
       return;
     }
     if (checkDistance(index, this.selectedCharacter, 'move', this.gamePlay.boardSize)) {
+      // Если ячейка находится в радиусе передвижения персонажа
       this.gamePlay.selectCell(index, 'green');
       this.gamePlay.setCursor(cursors.pointer);
     } else this.gamePlay.setCursor(cursors.notallowed);
@@ -27,14 +28,22 @@ export default class UserActions {
       return;
     }
     if (checkDistance(index, this.selectedCharacter, 'attack', this.gamePlay.boardSize)) {
+      // Если персонаж бота находится в радиусе атаки
       this.gamePlay.selectCell(index, 'red');
       this.gamePlay.setCursor(cursors.crosshair);
       return;
     }
-
+    // Если персонаж бота не находится в радиусе атаки
     this.gamePlay.setCursor(cursors.notallowed);
   }
 
+  /**
+   * Выполняет действия при нажатии на ячейку с персонажем пользователя
+   *
+   * @param posCharacter - объект класса PositionedCharacter, персонаж, на которого нажали
+   * @returns boolean, false - если выбранный персонаж не поменялся, в противном случае
+   * возвращает объект с новым выбранным персонажем
+   */
   onUserCellClick(posCharacter) {
     if (this.selectedCharacter) {
       if (posCharacter.position === this.selectedCharacter.position) return posCharacter;
@@ -46,10 +55,12 @@ export default class UserActions {
 
   onEmptyCellClick(index) {
     if (!this.selectedCharacter) return false;
+    // Если ячейка не находится в радиусе передвижения персонажа
     if (!checkDistance(index, this.selectedCharacter, 'move', this.gamePlay.boardSize)) {
       GamePlay.showError('Недопустимый радиус передвижения');
       return false;
     }
+    // Если ячейка находится в радиусе передвижения персонажа
     this.gamePlay.deselectCell(this.selectedCharacter.position);
     this.gamePlay.deselectCell(index);
     this.selectedCharacter.position = index;
@@ -63,6 +74,7 @@ export default class UserActions {
       return 0;
     }
     if (!checkDistance(posCharacter.position, this.selectedCharacter, 'attack', this.gamePlay.boardSize)) {
+      // Если ячейка не нахадится в радиусе атаки персонажа
       GamePlay.showError('Недопустимый радиус атаки');
       return 0;
     }
